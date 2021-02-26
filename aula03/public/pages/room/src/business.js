@@ -11,7 +11,8 @@ class Business{
     this.currentPeer = {}
 
     this.peers = new Map()
-  }
+    this.usersRecordings = new Map()
+  } 
   
   static initialize(deps){
     const instance = new Business(deps)
@@ -41,6 +42,11 @@ class Business{
 
   addVideoStream(userId, stream = this.currentStream){
     const recorderInstance = new Recorder(userId,stream)
+    this.userRecordings.set(recorderInstance.filename,recorderInstance)
+    if(this.recordingEnabled){
+      recorderInstance.startRecording()
+    } 
+
     const isCurrentId = false
     this.view.renderVideo({userId, stream, isCurrentId})
   }
@@ -112,7 +118,28 @@ class Business{
   onRecordPressed(recordingEnabled){
     this.recordingEnabled = recordingEnabled
     console.log('pressionou')
+    for(const[key,value] of this.usersRecordings){
+      if(this.recordingEnabled){
+        value.startRecording()
+        continue;
+      }
+      this.stopRecording(key)
+    } 
   }
-    
 
+  //se um usuario entrar e sair da call durante a gravacao
+  //precisa  parar as gravacoes anteriores
+  async stopRecording(userId){
+    const usersRecordings = this.usersRecordings
+    for(const[key,value] of usersRecordings){
+      const isContextUSer = key.includes(userId)
+      if(!isContextUSer) continue;
+      
+      const rec = value
+      const isRecordingActive = rec.recordingActive
+      if(!isRecordingActive) continue;
+
+      await rec.stopRecording()
+    } 
+  }  
 }
